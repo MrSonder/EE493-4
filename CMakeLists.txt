@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
-project( ee )
+project( ObserveTheBoard )
 find_package( OpenCV REQUIRED )
-add_executable( exec ee.cpp )
+add_executable( exec ObserveTheBoard.cpp )
 target_link_libraries( exec ${OpenCV_LIBS} )
