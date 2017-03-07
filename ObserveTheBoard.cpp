@@ -13,6 +13,7 @@ using namespace std;
 NOTES:
 It seems that some contours are counted twice.
 Solve this by counting close contours as one.
+Also draw the lower line.
 
 */
 
