@@ -11,7 +11,8 @@ using namespace std;
 
 /*
 NOTES:
-
+It seems that some contours are counted twice.
+Solve this by counting close contours as one.
 
 */
 
@@ -39,7 +40,7 @@ int main( int argc, char** argv )
   
 
   Mat x = FindWhiteTriangles(image);
-  imshow("x",x);
+  //imshow("x",x);
   Mat y = FillInside(x);
   DrawLines(y);
 
@@ -93,14 +94,14 @@ Mat FindCorners(Mat input, Mat test){
     // Determine where the end point is going to be for the lines.
     // For ptxmax, ptymin line:
     double slope = double(ptxmax.y - ptymin.y)/(ptxmax.x - ptymin.x);
-    cout << slope;
+
     double slope_to_zero = double(ptxmax.y - 0)/(ptxmax.x - 0);
-	cout << slope_to_zero<<endl;
+
 	// If slope_to_zero is smaller than slope, it means that line is going to hit y=0 axis.
 	// Else, it hits x= 0 axis.
 	if (slope_to_zero<slope){
 		Point edge = Point(int(-(ptxmax.y/slope)+ptxmax.x) ,0);
-		cout<<"hehe"<<edge<<endl;
+		
 		line( test, ptxmax, edge, Scalar( 255, 0, 0 ),  2, 8 );
 	}
 	else{
@@ -111,13 +112,26 @@ Mat FindCorners(Mat input, Mat test){
 
 
 	// For ptxmin, ptymin line:
-	double slope = double(ptxmax.y - ptymin.y)/(ptxmax.x - ptymin.x);
-    cout << slope;
-    double slope_to_zero = double(ptxmax.y - 0)/(ptxmax.x - 0);
-	cout << slope_to_zero<<endl;
+	slope = double(ptxmin.y - ptymin.y)/(ptymin.x - ptxmin.x);
 
+    slope_to_zero = double(ptxmin.y - 0)/(640 - ptxmin.x);
+
+
+	// If slope_to_zero is smaller than slope, it means that line is going to hit y=0 axis.
+	// Else, it hits x= 640 axis.
+
+	if (slope_to_zero<slope){
+		Point edge = Point(int((ptxmin.y/slope)+ptxmin.x) ,0);
+		
+		line( test, ptxmin, edge, Scalar( 255, 0, 0 ),  2, 8 );
+	}
+	else{
+		Point edge = Point(640, int(slope*(ptxmin.x - 640)+ptxmin.y));
+		line( test, ptxmin, edge, Scalar( 255, 0, 0 ),  2, 8 );	
+
+	}
     
-    line( test, ptxmin, ptymin, Scalar( 255, 0, 0 ),  2, 8 );
+    
 
     return test;
 }
@@ -145,15 +159,18 @@ Mat DrawLines(Mat input){
   /// Draw contours
   Mat drawing = Mat::zeros( canny_output.size(), CV_8UC3 );
   Mat test = Mat::zeros(image.size(), image.type());
-
+	
   for( int i = 0; i< contours.size(); i++ ){
     Scalar color = Scalar( 0, 0, 255 );
     drawContours( drawing, contours, i, color, 2, 8, hierarchy, 0, Point() );
     drawing = FindCorners(Mat(contours[i]), drawing);
+
+
+    
     }
   
-  waitKey(0);
-  cout<<image.size()<<endl;
+  
+
   /// Show in a window
   namedWindow( "Contours", CV_WINDOW_AUTOSIZE );
   imshow( "Contours", drawing );
