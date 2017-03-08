@@ -11,9 +11,8 @@ using namespace std;
 
 /*
 NOTES:
-It seems that some contours are counted twice.
-Solve this by counting close contours as one.
-Also draw the lower line.
+Contours sıralanması faydalı olabilir. 
+Böylece kesişim noktaları bişey ifade edecektir.
 
 */
 
@@ -43,10 +42,13 @@ int main( int argc, char** argv )
   Mat x = FindWhiteTriangles(image);
   //imshow("x",x);
   Mat y = FillInside(x);
-  DrawLines(y);
+  Mat result;
+  result = DrawLines(y);
+  imshow( "Contours", result );
 
   int a = waitKey(0);
-  //if(a==32) {imwrite("saved.jpg",image);imwrite("saved_x.jpg",x);break;}
+  if(a==32) {imwrite("for_report.jpg",result);}
+  //if (a == 27) break;
   
   return 0;
   
@@ -160,11 +162,32 @@ Mat DrawLines(Mat input){
   /// Draw contours
   Mat drawing = Mat::zeros( canny_output.size(), CV_8UC3 );
   Mat test = Mat::zeros(image.size(), image.type());
-	
+
+  /*
+  vector<Moments> mu(contours.size() );
+
+  for( int i = 0; i < contours.size(); i++ )
+     { mu[i] = moments( contours[i], false ); }
+
+
+  vector<Point2f> mc( contours.size() );
+  for( int i = 0; i < contours.size(); i++ )
+     { mc[i] = Point2f( mu[i].m10/mu[i].m00 , mu[i].m01/mu[i].m00 ); }
+
+
+  vector<Point> mass_center( contours.size() );
+  for( int i = 0; i < contours.size(); i++ )
+	{ mass_center[i] = Point( int(mc[i].x),int(mc[i].y) ); }  		
+  */
+
+
   for( int i = 0; i< contours.size(); i++ ){
     Scalar color = Scalar( 0, 0, 255 );
     drawContours( drawing, contours, i, color, 2, 8, hierarchy, 0, Point() );
+    if (hierarchy[i][3] != -1){continue;}
     drawing = FindCorners(Mat(contours[i]), drawing);
+
+	// Need to eliminate contours on top of each other.
 
 
     
@@ -173,8 +196,8 @@ Mat DrawLines(Mat input){
   
 
   /// Show in a window
-  namedWindow( "Contours", CV_WINDOW_AUTOSIZE );
-  imshow( "Contours", drawing );
+  //namedWindow( "Contours", CV_WINDOW_AUTOSIZE );
+  //imshow( "Contours", drawing );
   return drawing;
 }
 
