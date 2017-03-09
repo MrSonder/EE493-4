@@ -11,9 +11,8 @@ using namespace std;
 
 /*
 NOTES:
-Açık uçlu contourlar silinmeli.
-Contours sıralanması gerekecek.
-En alttaki satır da çizilmeli.
+En sağdaki problem dışında regionlar tamam gibi.
+Bundan sonra okuyup bi datastructure'a atması kaldı.
 
 */
 
@@ -34,6 +33,10 @@ void HSV_detect( int, void* );
 Mat DrawLines(Mat input);
 Mat FindAreas(Mat input);
 Mat FillInside(Mat input);
+Point GetMassCenter(Mat input);
+Point GetRightLeg(Mat input);
+Point GetLeftLeg(Mat input);
+
 
 /** @function main */
 int main( int argc, char** argv )
@@ -149,6 +152,116 @@ Mat FindCorners(Mat input, Mat test){
     return test;
 }
 
+Point GetMassCenter(Mat input){
+	/*
+	Draws necessary connections.
+	NOTE: Lower ones need to be drawn.
+	*/
+	
+	int length = input.checkVector(2);
+
+	int xmin = 0, xmax = 0, ymin = 0;
+	Point ptxmin, ptxmax, ptymin;
+
+	const Point* pts = input.ptr<Point>();
+	Point pt = pts[0];
+
+	ptxmin  = ptxmax = ptymin = pt;
+    xmin = xmax = pt.x;
+    ymin = pt.y;
+
+    for( int i = 1; i < length; i++ )
+    {
+        pt = pts[i];
+
+        if( xmin > pt.x )
+        {
+            xmin = pt.x;
+            ptxmin = pt;
+        }
+
+
+        if( xmax < pt.x )
+        {
+            xmax = pt.x;
+            ptxmax = pt;
+        }
+
+        if( ymin > pt.y )
+        {
+            ymin = pt.y;
+            ptymin = pt;
+        }
+    }
+    Point masscenter = Point((ptxmax.x+ptxmin.x+ptymin.x)/3,(ptxmax.y+ptxmin.y+ptymin.y)/3);
+    
+    return masscenter;
+}
+Point GetRightLeg(Mat input){
+	/*
+	Draws necessary connections.
+	NOTE: Lower ones need to be drawn.
+	*/
+	
+	int length = input.checkVector(2);
+
+	int xmin = 0, xmax = 0, ymin = 0;
+	Point ptxmin, ptxmax, ptymin;
+
+	const Point* pts = input.ptr<Point>();
+	Point pt = pts[0];
+
+	ptxmin  = ptxmax = ptymin = pt;
+    xmin = xmax = pt.x;
+    ymin = pt.y;
+
+    for( int i = 1; i < length; i++ )
+    {
+        pt = pts[i];
+
+        if( xmax < pt.x )
+        {
+            xmax = pt.x;
+            ptxmax = pt;
+        }
+
+        
+    }
+    
+    return ptxmax;
+}
+Point GetLeftLeg(Mat input){
+	/*
+	Draws necessary connections.
+	NOTE: Lower ones need to be drawn.
+	*/
+	
+	int length = input.checkVector(2);
+
+	int xmin = 0, xmax = 0, ymin = 0;
+	Point ptxmin, ptxmax, ptymin;
+
+	const Point* pts = input.ptr<Point>();
+	Point pt = pts[0];
+
+	ptxmin  = ptxmax = ptymin = pt;
+    xmin = xmax = pt.x;
+    ymin = pt.y;
+
+    for( int i = 1; i < length; i++ )
+    {
+        pt = pts[i];
+
+        if( xmin > pt.x )
+        {
+            xmin = pt.x;
+            ptxmin = pt;
+        }
+
+    }
+   
+    return ptxmin;
+}
 
 Mat FillInside(Mat input){
   Mat image = input.clone();
@@ -190,25 +303,55 @@ Mat DrawLines(Mat input){
 	{ mass_center[i] = Point( int(mc[i].x),int(mc[i].y) ); }  		
   */
 
-
+  int number_of_contours = 0;
   for( int i = 0; i< contours.size(); i++ ){
     Scalar color = Scalar( 0, 0, 255 );
     if (hierarchy[i][3] != -1){continue;}
-    //drawContours( drawing, contours, i, color, 2, 8, hierarchy, 0, Point() );
-    //if (hierarchy[i][3] != -1){continue;}
-    drawing = FindCorners(Mat(contours[i]), drawing);
-
-	// Need to eliminate contours on top of each other.
-
-
-    
+    number_of_contours++;
+    //drawing = FindCorners(Mat(contours[i]), drawing);
+	
     }
-  
-  
+    int counter = 0;
+    // Holds contours whom are actually drawn.
+    int array_contours [number_of_contours] ;
+    int contour_centers [number_of_contours] ;
+    for( int i = 0; i< contours.size(); i++ ){
+    if (hierarchy[i][3] != -1){continue;}
+    array_contours[counter] = i;
+    contour_centers[counter] = GetMassCenter(Mat(contours[i])).x ;
+    
+    counter++;
+    }
+    
+    int ranking [number_of_contours];
+    for( int i = 0; i<number_of_contours; i++ ){
+    	int counter = 0;
+    	for( int j = 0; j< number_of_contours; j++ ){
+    		if (contour_centers[i]>contour_centers[j]){
+    			counter++;
+    		}
+    	}
+    	ranking[i] = counter;
+    	
+    }
+  	
 
-  /// Show in a window
-  //namedWindow( "Contours", CV_WINDOW_AUTOSIZE );
-  //imshow( "Contours", drawing );
+    int sorted_contours [number_of_contours];
+    for(int i=0; i<number_of_contours; i++ ){
+    	sorted_contours[ranking[i]] = array_contours[i];
+    }
+
+    Point right_leg;
+    Point left_leg;
+    for( int i = 0; i< number_of_contours; i++ ){
+    Scalar color = Scalar( 0, 0, 255 );
+    drawing = FindCorners(Mat(contours[sorted_contours[i]]), drawing);
+    if (i>0) right_leg = GetRightLeg(Mat(contours[sorted_contours[i-1]]));
+    if (i>0 ) left_leg = GetLeftLeg(Mat(contours[sorted_contours[i]]));
+
+    if (i>0) line( drawing, left_leg, right_leg, Scalar( 255, 0, 0 ),  2, 8 );
+	}	
+
   return drawing;
 }
 
@@ -232,7 +375,9 @@ Mat FindAreas(Mat input){
     if (hierarchy[i][3] != -1){continue;}
     if (contourArea(contours[i])<4000){continue;}
     drawContours( drawing, contours, i, color, 2, 8, hierarchy, 0, Point() );
-
+    cout<<contourArea(contours[i])<<endl;
+    imshow("sadasd", drawing);
+    waitKey(0);
     }
   
   

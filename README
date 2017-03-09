@@ -1,2 +1,6 @@
----Commit 9---
+---Commit 10---
+1. All rows including first is now split into pieces for easier recognition.
+2. Unwanted contour is present in right side of the board.
+
+---Commit  9---
 1. All rows can now be split into parts except for the lowest row.
