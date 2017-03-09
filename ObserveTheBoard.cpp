@@ -11,8 +11,9 @@ using namespace std;
 
 /*
 NOTES:
-Contours sıralanması faydalı olabilir. 
-Böylece kesişim noktaları bişey ifade edecektir.
+Açık uçlu contourlar silinmeli.
+Contours sıralanması gerekecek.
+
 
 */
 
@@ -31,6 +32,7 @@ Mat FindWhiteTriangles(Mat);
 void templateMatching(Mat img);
 void HSV_detect( int, void* );
 Mat DrawLines(Mat input);
+Mat FindAreas(Mat input);
 Mat FillInside(Mat input);
 
 /** @function main */
@@ -45,6 +47,10 @@ int main( int argc, char** argv )
   Mat result;
   result = DrawLines(y);
   imshow( "Contours", result );
+  Mat z;
+  z = FindAreas(result);
+  imshow( "Mine", z );
+
 
   int a = waitKey(0);
   if(a==32) {imwrite("for_report.jpg",result);}
@@ -183,14 +189,46 @@ Mat DrawLines(Mat input){
 
   for( int i = 0; i< contours.size(); i++ ){
     Scalar color = Scalar( 0, 0, 255 );
-    drawContours( drawing, contours, i, color, 2, 8, hierarchy, 0, Point() );
     if (hierarchy[i][3] != -1){continue;}
+    //drawContours( drawing, contours, i, color, 2, 8, hierarchy, 0, Point() );
+    //if (hierarchy[i][3] != -1){continue;}
     drawing = FindCorners(Mat(contours[i]), drawing);
 
 	// Need to eliminate contours on top of each other.
 
 
     
+    }
+  
+  
+
+  /// Show in a window
+  //namedWindow( "Contours", CV_WINDOW_AUTOSIZE );
+  //imshow( "Contours", drawing );
+  return drawing;
+}
+
+Mat FindAreas(Mat input){
+  Mat image = input.clone();
+  blur( image, image, Size(3,3) );
+  Mat canny_output;
+  vector<vector<Point> > contours;
+  vector<Vec4i> hierarchy;
+  int thresh = 100;
+
+  Canny( image, canny_output, thresh, thresh*2, 3 );
+  /// Find contours
+  findContours( canny_output, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
+  /// Draw contours
+  Mat drawing = Mat::zeros( canny_output.size(), CV_8UC3 );
+  Mat test = Mat::zeros(image.size(), image.type());
+
+  for( int i = 0; i< contours.size(); i++ ){
+    Scalar color = Scalar( 0, 0, 255 );
+    if (hierarchy[i][3] != -1){continue;}
+    if (contourArea(contours[i])<10){continue;}
+    drawContours( drawing, contours, i, color, 2, 8, hierarchy, 0, Point() );
+
     }
   
   
