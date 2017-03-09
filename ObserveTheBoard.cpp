@@ -13,7 +13,7 @@ using namespace std;
 NOTES:
 Açık uçlu contourlar silinmeli.
 Contours sıralanması gerekecek.
-
+En alttaki satır da çizilmeli.
 
 */
 
@@ -53,7 +53,7 @@ int main( int argc, char** argv )
 
 
   int a = waitKey(0);
-  if(a==32) {imwrite("for_report.jpg",result);}
+  if(a==32) {imwrite("for_report2.jpg",z);}
   //if (a == 27) break;
   
   return 0;
@@ -62,6 +62,10 @@ int main( int argc, char** argv )
 
 
 Mat FindCorners(Mat input, Mat test){
+	/*
+	Draws necessary connections.
+	NOTE: Lower ones need to be drawn.
+	*/
 	
 	int length = input.checkVector(2);
 
@@ -226,7 +230,7 @@ Mat FindAreas(Mat input){
   for( int i = 0; i< contours.size(); i++ ){
     Scalar color = Scalar( 0, 0, 255 );
     if (hierarchy[i][3] != -1){continue;}
-    if (contourArea(contours[i])<10){continue;}
+    if (contourArea(contours[i])<4000){continue;}
     drawContours( drawing, contours, i, color, 2, 8, hierarchy, 0, Point() );
 
     }
