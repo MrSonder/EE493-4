@@ -1,3 +1,7 @@
+---Commit 11---
+1. Only wanted contours are shown now. Unwanteds are eliminated.
+2. Contours need to be sorted and the color value needs to be read.
+
 ---Commit 10---
 1. All rows including first is now split into pieces for easier recognition.
 2. Unwanted contour is present in right side of the board.

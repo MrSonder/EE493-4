@@ -11,8 +11,8 @@ using namespace std;
 
 /*
 NOTES:
-En sağdaki problem dışında regionlar tamam gibi.
-Bundan sonra okuyup bi datastructure'a atması kaldı.
+Okuyup bi datastructure'a atması kaldı.
+Bunun için contourların sıralanması lazım.
 
 */
 
@@ -26,7 +26,7 @@ int sat_high = 95;
 int val_low = 230;
 int val_high = 255;
 
-Mat FindCorners(Mat input, Mat test);
+Mat FindCorners(Mat input, Mat test, int control);
 Mat FindWhiteTriangles(Mat);
 void templateMatching(Mat img);
 void HSV_detect( int, void* );
@@ -64,7 +64,7 @@ int main( int argc, char** argv )
 }
 
 
-Mat FindCorners(Mat input, Mat test){
+Mat FindCorners(Mat input, Mat test, int control){
 	/*
 	Draws necessary connections.
 	NOTE: Lower ones need to be drawn.
@@ -115,6 +115,7 @@ Mat FindCorners(Mat input, Mat test){
 
 	// If slope_to_zero is smaller than slope, it means that line is going to hit y=0 axis.
 	// Else, it hits x= 0 axis.
+	if (control != -1) {
 	if (slope_to_zero<slope){
 		Point edge = Point(int(-(ptxmax.y/slope)+ptxmax.x) ,0);
 		
@@ -125,7 +126,8 @@ Mat FindCorners(Mat input, Mat test){
 		line( test, ptxmax, edge, Scalar( 255, 0, 0 ),  2, 8 );	
 
 	}
-
+	}
+	else {line( test, ptxmax, ptymin, Scalar( 255, 0, 0 ),  2, 8 );	}
 
 	// For ptxmin, ptymin line:
 	slope = double(ptxmin.y - ptymin.y)/(ptymin.x - ptxmin.x);
@@ -135,18 +137,19 @@ Mat FindCorners(Mat input, Mat test){
 
 	// If slope_to_zero is smaller than slope, it means that line is going to hit y=0 axis.
 	// Else, it hits x= 640 axis.
-
+    if (control != 1) {
 	if (slope_to_zero<slope){
-		Point edge = Point(int((ptxmin.y/slope)+ptxmin.x) ,0);
+		Point edge = Point(int((ptxmin.y/slope)+ptxmin.x) ,5); //5 -> 0
 		
 		line( test, ptxmin, edge, Scalar( 255, 0, 0 ),  2, 8 );
 	}
 	else{
-		Point edge = Point(640, int(slope*(ptxmin.x - 640)+ptxmin.y));
+		Point edge = Point(640, int(slope*(ptxmin.x - 630)+ptxmin.y)); //630 -> 640
 		line( test, ptxmin, edge, Scalar( 255, 0, 0 ),  2, 8 );	
 
 	}
-    
+    }
+    else {line( test, ptxmin, ptymin, Scalar( 255, 0, 0 ),  2, 8 );	}
     
 
     return test;
@@ -197,6 +200,7 @@ Point GetMassCenter(Mat input){
     
     return masscenter;
 }
+
 Point GetRightLeg(Mat input){
 	/*
 	Draws necessary connections.
@@ -345,7 +349,10 @@ Mat DrawLines(Mat input){
     Point left_leg;
     for( int i = 0; i< number_of_contours; i++ ){
     Scalar color = Scalar( 0, 0, 255 );
-    drawing = FindCorners(Mat(contours[sorted_contours[i]]), drawing);
+    int control = 0;
+    if (i == 0) control=-1;
+    if (i == number_of_contours-1) control=1;
+    drawing = FindCorners(Mat(contours[sorted_contours[i]]), drawing, control);
     if (i>0) right_leg = GetRightLeg(Mat(contours[sorted_contours[i-1]]));
     if (i>0 ) left_leg = GetLeftLeg(Mat(contours[sorted_contours[i]]));
 
@@ -375,9 +382,9 @@ Mat FindAreas(Mat input){
     if (hierarchy[i][3] != -1){continue;}
     if (contourArea(contours[i])<4000){continue;}
     drawContours( drawing, contours, i, color, 2, 8, hierarchy, 0, Point() );
-    cout<<contourArea(contours[i])<<endl;
-    imshow("sadasd", drawing);
-    waitKey(0);
+    //cout<<contourArea(contours[i])<<endl;
+    //imshow("sadasd", drawing);
+    //waitKey(0);
     }
   
   
