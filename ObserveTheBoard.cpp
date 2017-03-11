@@ -11,8 +11,9 @@ using namespace std;
 
 /*
 NOTES:
-Okuyup bi datastructure'a atması kaldı.
-Bunun için contourların sıralanması lazım.
+Sıralama tamam. 
+Contourların içinin okunup bir datastructure'a atılması kaldı.
+
 
 */
 
@@ -377,15 +378,76 @@ Mat FindAreas(Mat input){
   Mat drawing = Mat::zeros( canny_output.size(), CV_8UC3 );
   Mat test = Mat::zeros(image.size(), image.type());
 
+
+  // Ranking from left to right will be done here.
+  int number_of_contours=0;
   for( int i = 0; i< contours.size(); i++ ){
     Scalar color = Scalar( 0, 0, 255 );
     if (hierarchy[i][3] != -1){continue;}
     if (contourArea(contours[i])<4000){continue;}
-    drawContours( drawing, contours, i, color, 2, 8, hierarchy, 0, Point() );
+    number_of_contours++;
+    //drawContours( drawing, contours, i, color, 2, 8, hierarchy, 0, Point() );
     //cout<<contourArea(contours[i])<<endl;
     //imshow("sadasd", drawing);
     //waitKey(0);
     }
+
+  vector<Point> mass_centers(number_of_contours) ;
+  int miny [number_of_contours] = {0};
+  int neutral_ranking [number_of_contours];
+  int counter =0;
+  int counter_for_miny =0;
+  for( int i = 0; i< contours.size(); i++ ){
+    Scalar color = Scalar( 0, 0, 255 );
+    if (hierarchy[i][3] != -1){continue;}
+    if (contourArea(contours[i])<4000){continue;}
+    mass_centers[counter] = GetMassCenter(Mat(contours[i]));
+    neutral_ranking[counter] = i;
+    
+    cout << counter<<"\t"<< mass_centers[counter]<<endl;
+    if (counter_for_miny == 0) {miny[counter_for_miny] = mass_centers[counter].y; counter_for_miny++;}
+    else {
+    	for (int j =0; j<counter_for_miny; j++){
+    		// The line below makes closer y's considered to be equal.
+    		if (abs(mass_centers[counter].y-miny[j])<30) {mass_centers[counter] = Point(mass_centers[counter].x,miny[j]);break;}
+    		if (j == counter_for_miny-1) {miny[counter_for_miny] = mass_centers[counter].y; counter_for_miny++;}
+    		}
+    	}
+
+    
+    counter++;
+    }
+   // mass_centers[number_of_contours] still present and updated now.
+   int sorted_contours [number_of_contours];
+   counter = 0;
+   for( int i = 0; i< contours.size(); i++ ){
+    Scalar color = Scalar( 0, 0, 255 );
+    if (hierarchy[i][3] != -1){continue;}
+    if (contourArea(contours[i])<4000){continue;}
+    int counter_for_rank = 0;
+    for (int j = 0; j < number_of_contours; j++){
+    	if ((mass_centers[counter].x> mass_centers[j].x and mass_centers[counter].y== mass_centers[j].y) or mass_centers[counter].y< mass_centers[j].y) {counter_for_rank++;}
+
+    	}
+    //sorted_contours[counter] = counter_for_rank;
+    sorted_contours[counter_for_rank] = i;
+    cout << counter << "\t"<< mass_centers[counter]<< "\t"<< counter_for_rank<<  endl;	
+    counter++;
+    }
+
+   counter = 0;
+   for( int i = 0; i< number_of_contours; i++ ){
+    Scalar color = Scalar( 0, 0, 255 );
+    //if (hierarchy[i][3] != -1){continue;}
+    //if (contourArea(contours[i])<4000){continue;}
+    drawContours( drawing, contours, sorted_contours[i], color, 2, 8, hierarchy, 0, Point() );
+    
+    //cout<<contourArea(contours[i])<<endl;
+    imshow("sadasd", drawing);
+    waitKey(0);
+    }
+
+
   
   
 

@@ -1,3 +1,7 @@
+---Commit 12---
+1. Sorting from left to right while going bottom to top is finished.
+2. Only thing that's left is to read inside the contours.
+
 ---Commit 11---
 1. Only wanted contours are shown now. Unwanteds are eliminated.
 2. Contours need to be sorted and the color value needs to be read.
