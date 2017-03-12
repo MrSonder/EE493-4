@@ -32,11 +32,12 @@ Mat FindWhiteTriangles(Mat);
 void templateMatching(Mat img);
 void HSV_detect( int, void* );
 Mat DrawLines(Mat input);
-Mat FindAreas(Mat input);
+Mat FindAreas(Mat input, Mat original_image);
 Mat FillInside(Mat input);
 Point GetMassCenter(Mat input);
 Point GetRightLeg(Mat input);
 Point GetLeftLeg(Mat input);
+bool WhatColor(Mat image, Mat input, int color_choice);
 
 
 /** @function main */
@@ -50,14 +51,15 @@ int main( int argc, char** argv )
   Mat y = FillInside(x);
   Mat result;
   result = DrawLines(y);
-  imshow( "Contours", result );
+  //imshow( "Contours", result );
   Mat z;
-  z = FindAreas(result);
-  imshow( "Mine", z );
+  imshow("Board", image);
+  z = FindAreas(result, image);
+  imshow( "Decision", z );
 
 
   int a = waitKey(0);
-  if(a==32) {imwrite("for_report2.jpg",z);}
+  if(a==32) {imwrite("for_report.jpg",z);}
   //if (a == 27) break;
   
   return 0;
@@ -363,7 +365,7 @@ Mat DrawLines(Mat input){
   return drawing;
 }
 
-Mat FindAreas(Mat input){
+Mat FindAreas(Mat input, Mat original_image){
   Mat image = input.clone();
   blur( image, image, Size(3,3) );
   Mat canny_output;
@@ -404,7 +406,7 @@ Mat FindAreas(Mat input){
     mass_centers[counter] = GetMassCenter(Mat(contours[i]));
     neutral_ranking[counter] = i;
     
-    cout << counter<<"\t"<< mass_centers[counter]<<endl;
+    //cout << counter<<"\t"<< mass_centers[counter]<<endl;
     if (counter_for_miny == 0) {miny[counter_for_miny] = mass_centers[counter].y; counter_for_miny++;}
     else {
     	for (int j =0; j<counter_for_miny; j++){
@@ -431,20 +433,34 @@ Mat FindAreas(Mat input){
     	}
     //sorted_contours[counter] = counter_for_rank;
     sorted_contours[counter_for_rank] = i;
-    cout << counter << "\t"<< mass_centers[counter]<< "\t"<< counter_for_rank<<  endl;	
+    //cout << counter << "\t"<< mass_centers[counter]<< "\t"<< counter_for_rank<<  endl;	
     counter++;
     }
-
+   Mat final = Mat::zeros( canny_output.size(), CV_8UC3 );
    counter = 0;
    for( int i = 0; i< number_of_contours; i++ ){
-    Scalar color = Scalar( 0, 0, 255 );
+    Scalar color = Scalar( 255, 255, 255 );
+    Scalar color_red = Scalar( 0, 0, 255 );
+    Scalar color_blue = Scalar( 255, 0, 0 );
     //if (hierarchy[i][3] != -1){continue;}
     //if (contourArea(contours[i])<4000){continue;}
-    drawContours( drawing, contours, sorted_contours[i], color, 2, 8, hierarchy, 0, Point() );
-    
+    Mat drawing = Mat::zeros( canny_output.size(), CV_8UC3 );
+    drawContours( drawing, contours, sorted_contours[i], color, -1, 8, hierarchy, 0, Point() );
+
     //cout<<contourArea(contours[i])<<endl;
-    imshow("sadasd", drawing);
-    waitKey(0);
+    //imshow("sadasd", drawing);
+    
+    if (WhatColor(original_image,drawing, 0)){
+    cout << "RED" << endl;
+    drawContours( final, contours, sorted_contours[i], color_red, -1, 8, hierarchy, 0, Point() );
+    }
+    else if (WhatColor(original_image,drawing, 1)){
+	cout << "BLUE" << endl;
+	drawContours( final, contours, sorted_contours[i], color_blue, -1, 8, hierarchy, 0, Point() );
+    }
+    else {cout << "EMPTY" << endl;
+    drawContours( final, contours, sorted_contours[i], color, -1, 8, hierarchy, 0, Point() );}
+    
     }
 
 
@@ -454,7 +470,7 @@ Mat FindAreas(Mat input){
   /// Show in a window
   //namedWindow( "Contours", CV_WINDOW_AUTOSIZE );
   //imshow( "Contours", drawing );
-  return drawing;
+  return final;
 }
 
 
@@ -472,6 +488,72 @@ Mat FindWhiteTriangles(Mat input){
   return image_mask;
 }
 
+bool WhatColor(Mat image, Mat input, int color_choice){
+	Mat image_hsv = image.clone();
+	cvtColor(input, input, COLOR_BGR2GRAY);
+	//imshow("aw312", input);
+	// Color choice = 0 -> RED, Color choice = 1 -> BLUE
+	// 
+	int hue_low_red = 111;
+	int hue_high_red = 179;
+	int sat_low_red = 116;
+	int sat_high_red = 255;
+	int val_low_red = 167;
+	int val_high_red = 255;
+
+	int hue_low_blue = 9;
+	int hue_high_blue = 179;
+	int sat_low_blue = 237;
+	int sat_high_blue = 255;
+	int val_low_blue = 165;
+	int val_high_blue = 255;
+
+	int decision = 2000; // This is the threshold for colors.
+	//Mat drawing = Mat::zeros( image.size(), CV_8UC3 );
+
+	cvtColor(image_hsv, image_hsv, COLOR_BGR2HSV);
+  	
+	if (color_choice==0) {
+		inRange(image_hsv, Scalar(hue_low_red,sat_low_red,val_low_red), Scalar(hue_high_red, sat_high_red, val_high_red), image_hsv );
+		double thresh =230;
+  		double max = 255;
+  		threshold(image_hsv, image_hsv, thresh, max, THRESH_BINARY); //THRESH_BINARY
+  		bitwise_and(image_hsv,input,image_hsv);
+  		int counter = 0;
+  		for (int i=0; i<image_hsv.rows; i++) {
+  			for (int j=0; j<image_hsv.cols; j++){
+
+  				if (image_hsv.at<uchar>(i,j) == 255 ) {
+  				counter++;
+
+  				}
+  			}
+		}
+		//cout << counter << endl;
+		if (counter > decision) return true;
+	}
+	else if(color_choice == 1){
+		inRange(image_hsv, Scalar(hue_low_blue,sat_low_blue,val_low_blue), Scalar(hue_high_blue, sat_high_blue, val_high_blue), image_hsv );
+		double thresh =230;
+  		double max = 255;
+  		threshold(image_hsv, image_hsv, thresh, max, THRESH_BINARY); //THRESH_BINARY
+  		bitwise_and(image_hsv,input,image_hsv);
+  		int counter = 0;
+  		for (int i=0; i<image_hsv.rows; i++) {
+  			for (int j=0; j<image_hsv.cols; j++){
+
+  				if (image_hsv.at<uchar>(i,j) == 255 ) {
+  				counter++;
+
+  				}
+  			}
+		}
+		//cout << counter << endl;
+		if (counter > decision) return true;	
+
+		}
+	return false;
+}
 
 
 
