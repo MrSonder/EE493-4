@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <iostream>
+#include <time.h>
 
 
 using namespace cv;
@@ -38,26 +39,38 @@ Point GetMassCenter(Mat input);
 Point GetRightLeg(Mat input);
 Point GetLeftLeg(Mat input);
 bool WhatColor(Mat image, Mat input, int color_choice);
+int lowest_row = 0;
 
 
 /** @function main */
 int main( int argc, char** argv )
 {
   image = imread("board_latest.jpg", CV_LOAD_IMAGE_COLOR);
-  
+
+  Mat z;
+  time_t start,end;
+  time (&start);
+
 
   Mat x = FindWhiteTriangles(image);
   //imshow("x",x);
+  //waitKey(0);
   Mat y = FillInside(x);
+  //imshow("y",y);
+  //waitKey(0);
   Mat result;
   result = DrawLines(y);
   //imshow( "Contours", result );
-  Mat z;
-  imshow("Board", image);
+  
+  //imshow("Board", image);
   z = FindAreas(result, image);
+  //imshow( "Decision", z );
+
+
+  time (&end);
+  double dif = difftime (end,start);
+  printf ("Elasped time is %.2lf seconds.", dif );
   imshow( "Decision", z );
-
-
   int a = waitKey(0);
   if(a==32) {imwrite("for_report.jpg",z);}
   //if (a == 27) break;
@@ -318,6 +331,7 @@ Mat DrawLines(Mat input){
     //drawing = FindCorners(Mat(contours[i]), drawing);
 	
     }
+  lowest_row = number_of_contours-1; // If 7 triangles are seen, then there are 6 slots.
     int counter = 0;
     // Holds contours whom are actually drawn.
     int array_contours [number_of_contours] ;
@@ -367,6 +381,7 @@ Mat DrawLines(Mat input){
 
 Mat FindAreas(Mat input, Mat original_image){
   Mat image = input.clone();
+  Mat overlay = original_image.clone();
   blur( image, image, Size(3,3) );
   Mat canny_output;
   vector<vector<Point> > contours;
@@ -442,23 +457,26 @@ Mat FindAreas(Mat input, Mat original_image){
     Scalar color = Scalar( 255, 255, 255 );
     Scalar color_red = Scalar( 0, 0, 255 );
     Scalar color_blue = Scalar( 255, 0, 0 );
+    Scalar color_green = Scalar( 0, 255, 0 );
     //if (hierarchy[i][3] != -1){continue;}
     //if (contourArea(contours[i])<4000){continue;}
     Mat drawing = Mat::zeros( canny_output.size(), CV_8UC3 );
     drawContours( drawing, contours, sorted_contours[i], color, -1, 8, hierarchy, 0, Point() );
+    //drawContours( overlay, contours, sorted_contours[i], color_red, 2, 8, hierarchy, 0, Point() );
 
     //cout<<contourArea(contours[i])<<endl;
     //imshow("sadasd", drawing);
     
     if (WhatColor(original_image,drawing, 0)){
-    cout << "RED" << endl;
+    //cout << "RED" << endl;
     drawContours( final, contours, sorted_contours[i], color_red, -1, 8, hierarchy, 0, Point() );
     }
     else if (WhatColor(original_image,drawing, 1)){
-	cout << "BLUE" << endl;
-	drawContours( final, contours, sorted_contours[i], color_blue, -1, 8, hierarchy, 0, Point() );
+	  //cout << "BLUE" << endl;
+	  drawContours( final, contours, sorted_contours[i], color_blue, -1, 8, hierarchy, 0, Point() );
     }
-    else {cout << "EMPTY" << endl;
+    else {
+    //cout << "EMPTY" << endl;
     drawContours( final, contours, sorted_contours[i], color, -1, 8, hierarchy, 0, Point() );}
     
     }
@@ -519,8 +537,10 @@ bool WhatColor(Mat image, Mat input, int color_choice){
   		double max = 255;
   		threshold(image_hsv, image_hsv, thresh, max, THRESH_BINARY); //THRESH_BINARY
   		bitwise_and(image_hsv,input,image_hsv);
-  		int counter = 0;
-  		for (int i=0; i<image_hsv.rows; i++) {
+  		double counter = sum(image_hsv)[0]/255;
+      /*double counter;
+  		
+      for (int i=0; i<image_hsv.rows; i++) {
   			for (int j=0; j<image_hsv.cols; j++){
 
   				if (image_hsv.at<uchar>(i,j) == 255 ) {
@@ -528,7 +548,10 @@ bool WhatColor(Mat image, Mat input, int color_choice){
 
   				}
   			}
-		}
+
+		}*/
+    
+
 		//cout << counter << endl;
 		if (counter > decision) return true;
 	}
@@ -538,7 +561,8 @@ bool WhatColor(Mat image, Mat input, int color_choice){
   		double max = 255;
   		threshold(image_hsv, image_hsv, thresh, max, THRESH_BINARY); //THRESH_BINARY
   		bitwise_and(image_hsv,input,image_hsv);
-  		int counter = 0;
+      double counter = sum(image_hsv)[0]/255;
+  		/*int counter = 0;
   		for (int i=0; i<image_hsv.rows; i++) {
   			for (int j=0; j<image_hsv.cols; j++){
 
@@ -547,7 +571,7 @@ bool WhatColor(Mat image, Mat input, int color_choice){
 
   				}
   			}
-		}
+		}*/
 		//cout << counter << endl;
 		if (counter > decision) return true;	
 
