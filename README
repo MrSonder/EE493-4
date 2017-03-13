@@ -1,13 +1,16 @@
---_Commit 15---
+---Commit 16---
+1. Reds are stored as 1, blues are stored as -1 and empty spaces are 0.
+
+---Commit 15---
 1. Data is now stored.
 2. Reds are stored as 1, blues are stored as 2 and empty spaces are 0.
 3. The code is working as intended now.
 4. Only problem is accuracy of detecting white triangles.
 
---_Commit 14---
+---Commit 14---
 Performance Update.
 
---_Commit 13---
+---Commit 13---
 1. Reading colors are done now.
 2. How this data is stored is not yet decided.
 

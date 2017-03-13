@@ -71,14 +71,12 @@ int main( int argc, char** argv )
   time (&end);
   double dif = difftime (end,start);
   printf ("Elasped time is %.2lf seconds.", dif );
-  imshow( "Decision", z );
-  int a = waitKey(0);
-  if(a==32) {imwrite("for_report.jpg",z);}
-  //if (a == 27) break;
+
   
   return 0;
   
 }
+
 
 
 Mat FindCorners(Mat input, Mat test, int control){
@@ -436,9 +434,9 @@ Mat FindAreas(Mat input, Mat original_image){
     counter++;
     }
    // mass_centers[number_of_contours] still present and updated now.
-   int sorted_contours [number_of_contours];
+  int sorted_contours [number_of_contours];
    counter = 0;
-   for( int i = 0; i< contours.size(); i++ ){
+  for( int i = 0; i< contours.size(); i++ ){
     Scalar color = Scalar( 0, 0, 255 );
     if (hierarchy[i][3] != -1){continue;}
     if (contourArea(contours[i])<4000){continue;}
@@ -452,8 +450,8 @@ Mat FindAreas(Mat input, Mat original_image){
     //cout << counter << "\t"<< mass_centers[counter]<< "\t"<< counter_for_rank<<  endl;	
     counter++;
     }
-   Mat final = Mat::zeros( canny_output.size(), CV_8UC3 );
-   counter = 0;
+  Mat final = Mat::zeros( canny_output.size(), CV_8UC3 );
+  counter = 0;
   for( int i = 0; i< number_of_contours; i++ ){
     Scalar color = Scalar( 255, 255, 255 );
     Scalar color_red = Scalar( 0, 0, 255 );
@@ -470,17 +468,18 @@ Mat FindAreas(Mat input, Mat original_image){
     color_info = 0;
     if (WhatColor(original_image,drawing, 1)){
     //cout << "RED" << endl;
-    drawContours( final, contours, sorted_contours[i], color_red, -1, 8, hierarchy, 0, Point() );
+    //drawContours( final, contours, sorted_contours[i], color_red, -1, 8, hierarchy, 0, Point() );
     color_info = 1;
     }
-    else if (WhatColor(original_image,drawing, 2)){
+    else if (WhatColor(original_image,drawing, -1)){
 	  //cout << "BLUE" << endl;
-	  drawContours( final, contours, sorted_contours[i], color_blue, -1, 8, hierarchy, 0, Point() );
-    color_info = 2;
+	  //drawContours( final, contours, sorted_contours[i], color_blue, -1, 8, hierarchy, 0, Point() );
+    color_info = -1;
     }
     else {
     //cout << "EMPTY" << endl;
-    drawContours( final, contours, sorted_contours[i], color, -1, 8, hierarchy, 0, Point() );}
+    //drawContours( final, contours, sorted_contours[i], color, -1, 8, hierarchy, 0, Point() );
+    }
     if (i<lowest_row){out_matrix[0][i] = color_info;}
     else if (i<2*lowest_row-1){out_matrix[1][i-lowest_row] = color_info;}
     else if (i<3*lowest_row-3){out_matrix[2][i-2*lowest_row+1] = color_info;}
@@ -490,14 +489,14 @@ Mat FindAreas(Mat input, Mat original_image){
     else if (i<7*lowest_row-21){out_matrix[6][i-6*lowest_row+15] = color_info;}
 
     }
-    cout<<out_matrix[0][1]<<endl;
+    cout << "Output Matrix:" << endl;
     for (int i= 6; i>-1; i-- ){
       for (int j= 0; j<7; j++ ){
-        cout<<out_matrix[i][j];
+        cout<<out_matrix[i][j]<<"\t";
       }
       cout<<endl;
     }
-    waitKey(0);
+    
 
   /// Show in a window
   //namedWindow( "Contours", CV_WINDOW_AUTOSIZE );
@@ -524,7 +523,7 @@ bool WhatColor(Mat image, Mat input, int color_choice){
 	Mat image_hsv = image.clone();
 	cvtColor(input, input, COLOR_BGR2GRAY);
 	//imshow("aw312", input);
-	// Color choice = 1 -> RED, Color choice = 2 -> BLUE
+	// Color choice = 1 -> RED, Color choice = -1 -> BLUE
 	// 
 	int hue_low_red = 111;
 	int hue_high_red = 179;
@@ -569,7 +568,7 @@ bool WhatColor(Mat image, Mat input, int color_choice){
 		//cout << counter << endl;
 		if (counter > decision) return true;
 	}
-	else if(color_choice == 2){
+	else if(color_choice == -1){
 		inRange(image_hsv, Scalar(hue_low_blue,sat_low_blue,val_low_blue), Scalar(hue_high_blue, sat_high_blue, val_high_blue), image_hsv );
 		double thresh =230;
   		double max = 255;
