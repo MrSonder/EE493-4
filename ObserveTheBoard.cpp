@@ -21,27 +21,23 @@ Contourların içinin okunup bir datastructure'a atılması kaldı.
 Mat image;
 int thresh = 100;
 int max_thresh = 255;
-int hue_low = 62;
-int hue_high = 112;
-int sat_low = 35;
-int sat_high = 95;
-int val_low = 230;
-int val_high = 255;
+int lowest_row = 0;
+
+
 
 Mat FindCorners(Mat input, Mat test, int control);
 Mat FindWhiteTriangles(Mat);
 void templateMatching(Mat img);
 void HSV_detect( int, void* );
 Mat DrawLines(Mat input);
-Mat FindAreas(Mat input, Mat original_image);
+void FindAreas(int* out_matrix, Mat input, Mat original_image);
 Mat FillInside(Mat input);
 Point GetMassCenter(Mat input);
 Point GetRightLeg(Mat input);
 Point GetLeftLeg(Mat input);
 bool WhatColor(Mat image, Mat input, int color_choice);
-int lowest_row = 0;
-int out_matrix[7][7];
-int color_info = 0;
+
+
 
 /** @function main */
 int main( int argc, char** argv )
@@ -64,9 +60,19 @@ int main( int argc, char** argv )
   //imshow( "Contours", result );
   
   //imshow("Board", image);
-  z = FindAreas(result, image);
-  //imshow( "Decision", z );
+  //z = FindAreas(result, image);
+  
+  int out_matrix[7][7] = {0};
 
+  FindAreas(out_matrix, result, image);
+  //imshow( "Decision", z );
+  cout << "Output Matrix:" << endl;
+    for (int i= 6; i>-1; i-- ){
+      for (int j= 0; j<7; j++ ){
+        cout<<out_matrix[i][j]<<"\t";
+      }
+      cout<<endl;
+    }
 
   time (&end);
   double dif = difftime (end,start);
@@ -378,7 +384,7 @@ Mat DrawLines(Mat input){
   return drawing;
 }
 
-Mat FindAreas(Mat input, Mat original_image){
+void FindAreas(int* out_matrix, Mat input, Mat original_image){
   Mat image = input.clone();
   Mat overlay = original_image.clone();
   blur( image, image, Size(3,3) );
@@ -452,6 +458,8 @@ Mat FindAreas(Mat input, Mat original_image){
     }
   Mat final = Mat::zeros( canny_output.size(), CV_8UC3 );
   counter = 0;
+  //out_matrix[7][7] = {0};
+  int color_info = 0;
   for( int i = 0; i< number_of_contours; i++ ){
     Scalar color = Scalar( 255, 255, 255 );
     Scalar color_red = Scalar( 0, 0, 255 );
@@ -489,19 +497,13 @@ Mat FindAreas(Mat input, Mat original_image){
     else if (i<7*lowest_row-21){out_matrix[6][i-6*lowest_row+15] = color_info;}
 
     }
-    cout << "Output Matrix:" << endl;
-    for (int i= 6; i>-1; i-- ){
-      for (int j= 0; j<7; j++ ){
-        cout<<out_matrix[i][j]<<"\t";
-      }
-      cout<<endl;
-    }
+    
     
 
   /// Show in a window
   //namedWindow( "Contours", CV_WINDOW_AUTOSIZE );
   //imshow( "Contours", drawing );
-  return final;
+  // return final;
 }
 
 
@@ -509,6 +511,12 @@ Mat FindWhiteTriangles(Mat input){
   Mat image = input.clone();
   Mat image_hsv;
   Mat image_mask;
+  int hue_low = 62;
+  int hue_high = 112;
+  int sat_low = 35;
+  int sat_high = 95;
+  int val_low = 230;
+  int val_high = 255;
 
   cvtColor(image, image_hsv, COLOR_BGR2HSV);
   inRange(image_hsv, Scalar(hue_low,sat_low,val_low), Scalar(hue_high, sat_high, val_high), image_mask );
@@ -598,6 +606,12 @@ bool WhatColor(Mat image, Mat input, int color_choice){
 void HSV_detect( int, void* ){
   Mat result;
   Mat image_1 = image.clone();
+  int hue_low = 62;
+  int hue_high = 112;
+  int sat_low = 35;
+  int sat_high = 95;
+  int val_low = 230;
+  int val_high = 255;
   cvtColor(image_1, result, cv::COLOR_BGR2HSV);
   inRange(result, Scalar(hue_low,sat_low,val_low), Scalar(hue_high, sat_high, val_high), result);
   imshow("y", result);

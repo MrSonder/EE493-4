@@ -1,3 +1,6 @@
+---Commit 17---
+1. Performance update.
+
 ---Commit 16---
 1. Reds are stored as 1, blues are stored as -1 and empty spaces are 0.
 
